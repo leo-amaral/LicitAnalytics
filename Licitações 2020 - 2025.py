@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import sys
 sys.path.append(r'C:\Users\leo_a\AppData\Local\Programs\Python\Python313\Lib\site-packages')
 
@@ -66,42 +67,42 @@ df_unificado.to_csv( "Portal_Transp_Licitacoes_Unificado.csv", index=False, sep=
 df_unificado.to_excel("Portal_Transp_Licitacoes_Unificado.xlsx", index=False)
 '''
 
-# Modelo de Regressão Linear para Previsão de Economicidade das Licitações
+# Modelo de Regressão Linear para Previsão de Valores das Licitações
 
 # Parâmetro de análise - Poderá ser facilmente alterado para escalabilidade do projeto
 filtro_objeto = 'Cestas Básicas'
 
 # Filtra o objeto e remove linhas com Valor Total zero (para não distorcer a modelagem)
-df_analise = df_unificado[
+df_analise_valores = df_unificado[
     (df_unificado['Objeto'].str.contains(filtro_objeto, case=False, na=False)) & 
     (df_unificado['Valor Total Licitação'] > 0)
 ].copy()
 
 # Estratégia para tratamento de anomalias
-tratar_anomalia = False # True para tratar alguma anomalia e False para não tratar
+tratar_anomalia_valores = False # True para tratar alguma anomalia e False para não tratar
 
-if tratar_anomalia:
-    df_treino = df_analise[df_analise['Exercício'] != 23].copy() # Exercício é tratado apenas pelos últimos dígitos (20, 21, 22, 23, 24, 25)
-    print("Anomalias tratadas - Exercício 2022 excluído")
+if tratar_anomalia_valores:
+    df_treino_valores = df_analise_valores[df_analise_valores['Exercício'] != 23].copy() # Exercício é tratado apenas pelos últimos dígitos (20, 21, 22, 23, 24, 25)
+    print("\nAnomalias tratadas - Exercício 2022 excluído")
 else:
-    df_treino = df_analise.copy()
-    print("Não foram constatadas anomalias - Série Histórica completa")
+    df_treino_valores = df_analise_valores.copy()
+    print("\nNão foram constatadas anomalias - Série Histórica completa")
 
-df_anual = df_treino.groupby('Exercício')['Valor Total Licitação'].sum().reset_index()
+df_anual_valores = df_treino_valores.groupby('Exercício')['Valor Total Licitação'].sum().reset_index()
 
 # Correção: Transformação do exercício para Ano (Exercício Real)
-df_anual['Exercício_Real'] = df_anual['Exercício'] + 2000
+df_anual_valores['Exercício_Real'] = df_anual_valores['Exercício'] + 2000
 
 # Regressão Linear usando os anos corretos
-X = df_anual[['Exercício_Real']].values
-y = df_anual['Valor Total Licitação'].values
+X = df_anual_valores[['Exercício_Real']].values
+y = df_anual_valores['Valor Total Licitação'].values
 
 modelo = LinearRegression()
 modelo.fit(X, y)
 
 # Previsão para 2026
-previsao_bruta_2026 = modelo.predict(np.array([[2026]]))
-previsao_2026 = max(0, previsao_bruta_2026[0])
+previsao_valores_2026 = modelo.predict(np.array([[2026]]))
+previsao_2026 = max(0, previsao_valores_2026[0])
 
 r_quadrado = modelo.score(X, y)
 
@@ -110,7 +111,7 @@ print(f"Previsão de gasto para 2026: R$ {previsao_2026:,.2f}")
 
 # Gráfico
 plt.figure(figsize=(10,6))
-plt.scatter(df_anual['Exercício_Real'], y, color='blue', label='Dados Históricos', s=100)
+plt.scatter(df_anual_valores['Exercício_Real'], y, color='blue', label='Dados Históricos', s=100)
 
 x_linha = np.array([2020, 2026]).reshape(-1, 1) # Linha de tendência
 y_linha = modelo.predict(x_linha)
@@ -124,6 +125,65 @@ plt.xlim(2019, 2027)
 plt.title('Regressão Linear: Gastos com Cestas Básicas')
 plt.xlabel('Ano')
 plt.ylabel('Valor Total Licitação (R$)')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()
+
+# Modelo de Regressão Linear para Previsão de Economicidade das Licitações
+# A Princípio será utilizado o mesmo filtro_objetos para as duas previsões
+
+# Filtra o objeto e remove linhas com Valor Total zero (para não distorcer a modelagem)
+df_analise_economicidade = df_unificado[
+    (df_unificado['Objeto'].str.contains(filtro_objeto, case=False, na=False)) & 
+    (df_unificado['Valor Total Licitação'] > 0)
+].copy()
+
+# Estratégia para tratamento de anomalias
+tratar_anomalia_economicidade = False # True para tratar alguma anomalia e False para não tratar
+
+if tratar_anomalia_economicidade:
+    df_treino_economicidade = df_analise_economicidade[df_analise_economicidade['Exercício'] != 23].copy() # Exercício é tratado apenas pelos últimos dígitos (20, 21, 22, 23, 24, 25)
+    print("\nAnomalias tratadas - Exercício 2022 excluído")
+else:
+    df_treino_economicidade = df_analise_economicidade.copy()
+    print("\nNão foram constatadas anomalias - Série Histórica completa")
+
+df_anual_economicidade = df_treino_economicidade.groupby('Exercício')['Economia Percentual'].mean().reset_index()
+
+# Correção: Transformação do exercício para Ano (Exercício Real)
+df_anual_economicidade['Exercício_Real'] = df_anual_economicidade['Exercício'] + 2000
+
+# Regressão Linear usando os anos corretos
+X = df_anual_economicidade[['Exercício_Real']].values
+y = df_anual_economicidade['Economia Percentual'].values
+
+modelo = LinearRegression()
+modelo.fit(X, y)
+
+# Previsão para 2026
+previsao_economicidade_2026 = modelo.predict(np.array([[2026]]))
+previsao_2026_economicidade = max(0, previsao_economicidade_2026[0])
+
+r_quadrado = modelo.score(X, y)
+
+print(f"\n--- ANÁLISE PREDITIVA: {filtro_objeto} ---")
+print(f"Previsão de economicidade para 2026: {(previsao_2026_economicidade * 100):,.2f}%")
+
+# Gráfico
+plt.figure(figsize=(10,6))
+plt.scatter(df_anual_economicidade['Exercício_Real'], y, color='blue', label='Dados Históricos', s=100)
+
+x_linha = np.array([2020, 2026]).reshape(-1, 1) # Linha de tendência
+y_linha = modelo.predict(x_linha)
+plt.plot(x_linha, y_linha, color='red', linestyle='--', label='Tendência Linear')
+plt.scatter(2026, previsao_2026_economicidade, color='green', marker='X', s=200, label='Projeção 2026')
+plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1.0))
+plt.text(2020.2, y.max() * 1.4 , f'$R^2 = {r_quadrado:.4f}$', fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
+plt.ylim(0, y.max() * 1.5)
+plt.xlim(2019, 2027)
+plt.title('Regressão Linear: Gastos com Cestas Básicas')
+plt.xlabel('Ano')
+plt.ylabel('Economicidade Percentual (%)')
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.show()

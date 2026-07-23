@@ -16,7 +16,8 @@ O objetivo é analisar dados de processos licitatórios, gerar indicadores por m
 - Tratamento e limpeza dos dados;
 - Cálculo da economia absoluta e percentual;
 - Dashboard interativo no Power BI;
-- Modelo inicial de regressão linear para previsão de valores.
+- Modelo inicial de regressão linear para previsão de valores;
+- Modelo inicial de regressão linear para previsão de economicidade percentual;
 
 # Próximas etapas
 - Análise exploratória (EDA);
