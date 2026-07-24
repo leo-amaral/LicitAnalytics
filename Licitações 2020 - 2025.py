@@ -7,7 +7,7 @@ import matplotlib.ticker as mtick
 import sys
 sys.path.append(r'C:\Users\leo_a\AppData\Local\Programs\Python\Python313\Lib\site-packages')
 
-# Importação dos arquivos
+# Importação dos arquivos das Licitações
 arquivos_csv = [
     "Portal Transp. Licitações - 2020.csv",
     "Portal Transp. Licitações - 2021.csv",
@@ -40,8 +40,8 @@ def converter_moeda(coluna):
         .str.replace("R$", "", regex=False)
         .str.replace("\xa0", "", regex=False)   # espaço invisível
         .str.replace(" ", "", regex=False)
-        .str.replace(".", "", regex=False)      # milhar
-        .str.replace(",", ".", regex=False)     # decimal
+        .str.replace(".", "", regex=False)      # remove ponto de milhar
+        .str.replace(",", ".", regex=False)     # troca vírgula decimal por ponto
         .replace({"": None, "nan": None, "-": None})
         .pipe(pd.to_numeric, errors="coerce")
     )
@@ -187,3 +187,69 @@ plt.ylabel('Economicidade Percentual (%)')
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.show()
+
+'''
+    Fase 2 do LicitAnalytics
+    Importação dos Dados de Empenhos dos anos de 2020 a 2025
+    Serão excluídos todos os empenhos não relacionados a licitações - Boa parte dos empenhos
+    Depois do tratamento e unificação dos dados será exportado para o Power BI
+    Não há previsão da implantação de modelos de regressão linear (por enquanto) para modelos preditivos
+'''
+
+arquivos_empenhos = [
+    "Portal Transparencia Despesas Gerais - Exercício 2020.csv",
+    "Portal Transparencia Despesas Gerais - Exercício 2021.csv",
+    "Portal Transparencia Despesas Gerais - Exercício 2022.csv",
+    "Portal Transparencia Despesas Gerais - Exercício 2023.csv",
+    "Portal Transparencia Despesas Gerais - Exercício 2024.csv",
+    "Portal Transparencia Despesas Gerais - Exercício 2025.csv"
+]
+
+dfs_empenhos = []
+
+for arquivo in arquivos_empenhos:
+    try:
+        ano_exercicio = arquivo.split("Exercício ")[1].replace(".csv", "")
+        df = pd.read_csv(arquivo, sep=';', encoding='latin1', low_memory=False, dtype={'Proc. Licitatório': str})
+        df['Ano_Empenho'] = ano_exercicio
+        dfs_empenhos.append(df)
+    except Exception as e:
+        print(f"Erro ao carregar {arquivo}: {e}")
+
+# Unificação dos dados
+df_empenhos_unificado = pd.concat(dfs_empenhos, ignore_index=True)
+
+# Exclusão de todas essas colunas ai mesmo
+colunas_para_excluir = [
+    'Cód. Forn.', 'Nome Fornecedor', 'Nome Natureza', 'N° Ficha', 
+    'Dotação', 'Alteração Dotação', 'Dotação Atual', 'Reforço', 
+    'Empenhado até Hoje', 'Liquidado até Hoje', 'Pago até Hoje', 
+    'Local', 'Funcional', 'Função', 'Nome da Função', 'Subfunção', 
+    'Nome da Subfunção', 'Cód. de aplicação', 'Descrição do Cód. de aplicação', 
+    'Fonte', 'Fonte de Recurso', 'Cód. Fonte', 'Código Fonte', 
+    'Fonte STN', 'Nome Fonte STN'
+]
+
+df_empenhos_unificado.drop(columns=colunas_para_excluir, errors='ignore', inplace=True)
+
+# Conversão dos valores monetários
+colunas_monetarias = ['Valor Empenhado', 'Valor Anulado', 'Valor Liquidado', 'Valor Pago']
+
+for col in colunas_monetarias:
+    df_empenhos_unificado[col] = (
+        df_empenhos_unificado[col].astype(str)
+        .str.replace("R$", "", regex=False)
+        .str.replace("\xa0", "", regex=False) # espaço invisível
+        .str.replace(" ", "", regex=False)
+        .str.replace(".", "", regex=False)    # remove ponto de milhar
+        .str.replace(",", ".", regex=False)   # troca vírgula decimal por ponto
+        .pipe(pd.to_numeric, errors="coerce")
+        .fillna(0)
+    )
+    
+df_empenhos_unificado['Empenho Líquido'] = df_empenhos_unificado['Valor Empenhado'] - df_empenhos_unificado['Valor Anulado']
+
+df_empenhos_unificado = df_empenhos_unificado.dropna(subset=['Proc. Licitatório'])
+
+# Exportação dos dados
+df_empenhos_unificado.to_csv("Despesas_Gerais_Unificado.csv", sep=';', index=False, encoding='latin1')
