@@ -1,4 +1,5 @@
 # Licitações 2020 - 2025
+
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
@@ -249,7 +250,7 @@ for col in colunas_monetarias:
     
 df_empenhos_unificado['Empenho Líquido'] = df_empenhos_unificado['Valor Empenhado'] - df_empenhos_unificado['Valor Anulado']
 
-df_empenhos_unificado = df_empenhos_unificado.dropna(subset=['Proc. Licitatório'])
+df_empenhos_unificado = df_empenhos_unificado.dropna(subset=['Proc. Licitatório']) # Exclui todos os empenhos que não tem processo licitatório vinculado
 
 # Exportação dos dados
-df_empenhos_unificado.to_csv("Despesas_Gerais_Unificado.csv", sep=';', index=False, encoding='latin1')
+# df_empenhos_unificado.to_csv("Despesas_Gerais_Unificado.csv", sep=';', index=False, encoding='latin1', decimal=',')
