@@ -60,13 +60,13 @@ df_unificado["Economia Percentual"] = np.where(
     0
 )
 
-'''
+
 # Exportação do arquivo final em CSV e XLSL
 df_unificado.to_csv( "Portal_Transp_Licitacoes_Unificado.csv", index=False, sep=';', encoding='latin1'
 )
 
 df_unificado.to_excel("Portal_Transp_Licitacoes_Unificado.xlsx", index=False)
-'''
+
 
 # Modelo de Regressão Linear para Previsão de Valores das Licitações
 # Alterar os dois aqui de uma vez para ficar bonitinho nos gráficos e prints
@@ -269,4 +269,4 @@ df_empenhos_unificado['Empenho Líquido'] = df_empenhos_unificado['Valor Empenha
 df_empenhos_unificado = df_empenhos_unificado.dropna(subset=['Proc. Licitatório']) # Exclui todos os empenhos que não tem processo licitatório vinculado
 
 # Exportação dos dados
-# df_empenhos_unificado.to_csv("Despesas_Gerais_Unificado.csv", sep=';', index=False, encoding='latin1', decimal=',')
+df_empenhos_unificado.to_csv("Despesas_Gerais_Unificado.csv", sep=';', index=False, encoding='latin1', decimal=',')

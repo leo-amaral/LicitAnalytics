@@ -61,9 +61,10 @@ A série continua com novos ciclos de análise. Acompanhe as próximas publicaç
 - Unificação das bases de dados de licitações de 2020 a 2025
 - Tratamento e limpeza de dados extraídos do Portal da Transparência
 - Cálculo de economicidade absoluta e percentual, por modalidade e por objeto
-- Dashboards interativos no Power BI
+- Dashboards interativos no Power BI para as Licitações
 - Modelos de regressão linear para previsão de valores e de economicidade
 - Unificação, tratamento e limpeza de dados de execução orçamentária (empenhos, liquidações, pagamentos e anulações) de 2020 a 2025
+- Dashboards interativos no Power BI para a execução orçamentária
 
 # Próximas etapas
 - Análise exploratória (EDA) mais aprofundada por objeto de contratação
