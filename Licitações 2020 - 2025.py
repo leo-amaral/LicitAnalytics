@@ -124,7 +124,7 @@ else:
         x_linha = np.array([2020, 2026]).reshape(-1, 1)
         y_linha = modelo.predict(x_linha)
         plt.plot(x_linha, y_linha, color='red', linestyle='--', label='Tendência Linear')
-        plt.scatter(2026, previsao_2026, color='green', marker='X', s=200, label='Projeção 2026')
+        plt.scatter(2026, previsao_2026, color='green', marker='X', s=200, label=f'Projeção 2026: \nR$ {previsao_2026:,.2f}')
 
         plt.text(2020.2, y.max() * 1.4 , f'$R^2 = {r_quadrado:.4f}$', fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
         plt.ticklabel_format(style='plain', axis='y')
@@ -192,7 +192,7 @@ else:
         x_linha = np.array([2020, 2026]).reshape(-1, 1)
         y_linha = modelo.predict(x_linha)
         plt.plot(x_linha, y_linha, color='red', linestyle='--', label='Tendência Linear')
-        plt.scatter(2026, previsao_2026_economicidade, color='green', marker='X', s=200, label='Projeção 2026')
+        plt.scatter(2026, previsao_2026_economicidade, color='green', marker='X', s=200, label=f'Projeção 2026: \n{(previsao_2026_economicidade * 100):,.2f}%')
         plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1.0))
         plt.text(2020.2, y.max() * 1.4 , f'$R^2 = {r_quadrado:.4f}$', fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
         plt.ylim(0, y.max() * 1.5)
