@@ -1,4 +1,4 @@
-# Licitações 2020 - 2025
+# LicitAnalytics
 
 import pandas as pd
 import numpy as np
@@ -8,7 +8,7 @@ import matplotlib.ticker as mtick
 import sys
 sys.path.append(r'C:\Users\leo_a\AppData\Local\Programs\Python\Python313\Lib\site-packages')
 
-# Importação dos arquivos das Licitações
+# Importação dos arquivos das Licitações de 2020 a 2025
 arquivos_csv = [
     "Portal Transp. Licitações - 2020.csv",
     "Portal Transp. Licitações - 2021.csv",
@@ -62,24 +62,35 @@ df_unificado["Economia Percentual"] = np.where(
 
 
 # Exportação do arquivo final em CSV e XLSL
-df_unificado.to_csv( "Portal_Transp_Licitacoes_Unificado.csv", index=False, sep=';', encoding='latin1'
+df_unificado.to_csv( "Licitações 2020 - 2025.csv", index=False, sep=';', encoding='latin1'
 )
 
-df_unificado.to_excel("Portal_Transp_Licitacoes_Unificado.xlsx", index=False)
+df_unificado.to_excel("Licitações 2020 - 2025 Excel.xlsx", index=False)
 
 
-# Modelo de Regressão Linear para Previsão de Valores das Licitações
+'''
+Modelo de Regressão Linear Simples para Previsão de Valores das Licitações
+Nessa fase, o modelo preditivo utiliza apenas os Valores Previstos anuais anteriores das Licitações
+'''
+
 # Alterar os dois aqui de uma vez para ficar bonitinho nos gráficos e prints
-termos_pesquisa = ["Cestas Básicas"]
-termos_print = "Cestas Básicas"
+termos_pesquisa = ['Merenda', r'perec[ií]ve']
+termos_print = "Merenda Perecível"
 
+'''
+Alguns outros objetos que podem ser pesquisados acima
+Em alguns casos, pode ser necessário usar Regex para que a pesquisa ocorra de forma correta
+REMUME -> para medicamentos contidos na REMUME de Riolândia/SP
+Cestas Básicas
+Informática 
+'''
 mascara_objeto = pd.Series(True, index=df_unificado.index)
 
 # Aplica o filtro rodando cada termo da lista separadamente na base
 for termo in termos_pesquisa:
     mascara_objeto &= df_unificado['Objeto'].str.contains(termo, case=False, regex=True, na=False)
 
-termo_exclusao = r"n[ãa]o contido"
+termo_exclusao = r"n[ãa]o" # Para excluir alguns termos do objeto caso necessário
 mascara_objeto &= ~df_unificado['Objeto'].str.contains(termo_exclusao, case=False, regex=True, na=False)
 
 # Filtra o objeto e remove linhas com Valor Total zero (para não distorcer a modelagem)
@@ -112,7 +123,7 @@ else:
         #Previsão para 2026
         previsao_valores_2026 = modelo.predict(np.array([[2026]]))
         previsao_2026 = max(0, previsao_valores_2026[0])
-        r_quadrado = modelo.score(X, y)
+        r_quadrado_regressao_simples_valores = modelo.score(X, y)
 
         print(f"\n--- ANÁLISE PREDITIVA: {termos_print} ---")
         print(f"Previsão de valores para 2026: R$ {previsao_2026:,.2f}")
@@ -126,21 +137,24 @@ else:
         plt.plot(x_linha, y_linha, color='red', linestyle='--', label='Tendência Linear')
         plt.scatter(2026, previsao_2026, color='green', marker='X', s=200, label=f'Projeção 2026: \nR$ {previsao_2026:,.2f}')
 
-        plt.text(2020.2, y.max() * 1.4 , f'$R^2 = {r_quadrado:.4f}$', fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
+        plt.text(2020.2, y.max() * 1.4 , f'$R^2 = {r_quadrado_regressao_simples_valores:.4f}$', fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
         plt.ticklabel_format(style='plain', axis='y')
         plt.ylim(0, y.max() * 1.5)
         plt.xlim(2019, 2027)
         # plt.title(f'Regressão Linear: Valores Previstos de {texto_filtro_print}')
-        plt.title(f'Regressão Linear: Valores Previstos de {termos_print}')
+        plt.title(f'Regressão Linear Simples: Valores Previstos de {termos_print}')
         plt.xlabel('Ano')
         plt.ylabel('Valor Previsto (R$)')
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.show()
 
-# Modelo de Regressão Linear para Previsão de Economicidade das Licitações
+'''
+Modelo de Regressão Linear Simples para Previsão de Economicidade das Licitações
+Nessa fase, o modelo preditivo utiliza apenas a Economicidade das Licitações
+O filtro utilizado aqui é o mesmo dos valores previstos
+'''
 
-# A Princípio será utilizado o mesmo filtro_objetos para as duas previsões
 df_analise_economicidade = df_unificado[mascara_objeto & (df_unificado['Valor Total Licitação'] > 0)].copy()
 
 # Trava: Verifica se encontrou dados antes de tentar modelar
@@ -180,7 +194,7 @@ else:
         #Previsão para 2026
         previsao_economicidade_2026 = modelo.predict(np.array([[2026]]))
         previsao_2026_economicidade = max(0, previsao_economicidade_2026[0])
-        r_quadrado = modelo.score(X, y)
+        r_quadrado_regressao_simples_economicidade = modelo.score(X, y)
 
         print(f"\n--- ANÁLISE PREDITIVA DE ECONOMICIDADE: {termos_print} ---")
         print(f"Previsão de economicidade para 2026: {(previsao_2026_economicidade * 100):,.2f}%")
@@ -194,16 +208,140 @@ else:
         plt.plot(x_linha, y_linha, color='red', linestyle='--', label='Tendência Linear')
         plt.scatter(2026, previsao_2026_economicidade, color='green', marker='X', s=200, label=f'Projeção 2026: \n{(previsao_2026_economicidade * 100):,.2f}%')
         plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1.0))
-        plt.text(2020.2, y.max() * 1.4 , f'$R^2 = {r_quadrado:.4f}$', fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
+        plt.text(2020.2, y.max() * 1.4 , f'$R^2 = {r_quadrado_regressao_simples_economicidade:.4f}$', fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
         plt.ylim(0, y.max() * 1.5)
         plt.xlim(2019, 2027)
         # plt.title(f'Regressão Linear: Economicidade de {texto_filtro_print}')
-        plt.title(f'Regressão Linear: Economicidade de {termos_print}')
+        plt.title(f'Regressão Linear Simples: Economicidade de {termos_print}')
         plt.xlabel('Ano')
         plt.ylabel('Economicidade Percentual (%)')
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.show()
+
+'''
+Modelo de Regressão Linear Múltipla para Previsão de Valores das Licitações
+Nessa fase, o modelo preditivo utiliza também o indíce IPCA para estimar os Valores Previstos anuais das Licitações
+O filtro utilizado aqui é o mesmo dos valores previstos para a comparação entre os modelos preditivos
+'''
+
+# Taxas Anuais do IPCA
+ipca_historico = {
+    2020: 4.52,
+    2021: 10.06,
+    2022: 5.79,
+    2023: 4.62,
+    2024: 4.83,
+    2025: 4.26
+}
+
+# O modelo precisa do IPCA estimado de 2026 para fazer a previsão
+ipca_2026_projecao = 5.02 # Extraído do Relatório de Mercado - Focus de 14/08/2026
+
+if not df_anual_valores.empty:
+    # Mapeando a inflação para os anos correspondentes
+    df_anual_valores['IPCA'] = df_anual_valores['Exercício_Real'].map(ipca_historico)
+    
+    # X é uma matriz 2D (Tempo + Inflação)
+    X_valores = df_anual_valores[['Exercício_Real', 'IPCA']].values
+    y_valores = df_anual_valores['Valor Previsto'].values
+
+    modelo_valores = LinearRegression()
+    modelo_valores.fit(X_valores, y_valores)
+    
+    # Previsão para 2026 
+    previsao_raw_2026 = modelo_valores.predict(np.array([[2026, ipca_2026_projecao]]))
+    previsao_2026 = max(0, previsao_raw_2026[0])
+    r_quadrado_regressao_multipla_valores = modelo_valores.score(X_valores, y_valores)
+
+    print(f"\n--- ANÁLISE PREDITIVA MÚLTIPLA (ANO + IPCA): {termos_print} ---")
+    print(f"Previsão de Valores para 2026: R$ {previsao_2026:,.2f}")
+
+    # Gráfico adaptado para 2D para visualização
+    plt.figure(figsize=(10,6))
+    plt.scatter(df_anual_valores['Exercício_Real'], y_valores, color='blue', label='Dados Históricos', s=100)
+
+    # Para plotar a linha ajustada em 2D, usamos as predições do próprio modelo histórico
+    y_pred_historico = modelo_valores.predict(X_valores)
+    # Linha completa para ser plotado até a previsão de 2026
+    x_linha_completa = list(df_anual_valores['Exercício_Real']) + [2026]
+    y_linha_completa = list(y_pred_historico) + [previsao_2026]
+    plt.plot(x_linha_completa, y_linha_completa, 
+             color='purple', 
+             linestyle='--', 
+             marker='s',     
+             markersize=6,
+             linewidth=2,
+             label='Ajuste Múltiplo (Ano + IPCA)')
+    
+    plt.scatter(2026, previsao_2026, color='green', marker='X', s=200, label=f'Projeção 2026:\nR$ {previsao_2026:,.2f}')
+
+    plt.text(2020.2, y_valores.max() * 1.4 , f'$R^2 = {r_quadrado_regressao_multipla_valores:.4f}$', fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
+    plt.ticklabel_format(style='plain', axis='y')
+    plt.ylim(0, y_valores.max() * 1.5)
+    plt.xlim(2019, 2027)
+    plt.title(f'Regressão Linear Múltipla (Fator IPCA): Valores Previstos de {termos_print}')
+    plt.xlabel('Ano')
+    plt.ylabel('Valor Previsto (R$)')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.show()
+
+'''
+Modelo de Regressão Linear Múltipla para Previsão de Economicidade das Licitações
+Nessa fase, o modelo preditivo utiliza também o indíce IPCA para estimar a Economicidade de 2026 das Licitações
+O filtro utilizado aqui é o mesmo da Economicidade para a comparação entre os modelos preditivos
+'''
+
+if not df_anual_economicidade.empty:
+    # Mapeando a inflação para os anos correspondentes
+    df_anual_economicidade['IPCA'] = df_anual_economicidade['Exercício_Real'].map(ipca_historico)
+    
+    # X é uma matriz 2D (Tempo + Inflação)
+    X_economicidade = df_anual_economicidade[['Exercício_Real', 'IPCA']].values
+    y_economicidade = df_anual_economicidade['Economia Percentual'].values
+
+    modelo_economicidade = LinearRegression()
+    modelo_economicidade.fit(X_economicidade, y_economicidade)
+    
+    # Previsão para 2026 
+    previsao_raw_2026_economicidade = modelo_economicidade.predict(np.array([[2026, ipca_2026_projecao]]))
+    previsao_2026_economicidade = max(0, previsao_raw_2026_economicidade[0])
+    r_quadrado_regressao_multipla_economicidade = modelo_economicidade.score(X_economicidade, y_economicidade)
+
+    print(f"\n--- ANÁLISE PREDITIVA MÚLTIPLA (ANO + IPCA): {termos_print} ---")
+    print(f"Previsão de Economicidade para 2026: {(previsao_2026_economicidade * 100):,.2f}%")
+
+    # Gráfico adaptado para 2D para visualização
+    plt.figure(figsize=(10,6))
+    plt.scatter(df_anual_economicidade['Exercício_Real'], y_economicidade, color='blue', label='Dados Históricos', s=100)
+
+    # Para plotar a linha ajustada em 2D, usamos as predições do próprio modelo histórico
+    y_pred_historico_economicidade = modelo_economicidade.predict(X_valores)
+    # Linha completa para ser plotado até a previsão de 2026
+    x_linha_completa = list(df_anual_economicidade['Exercício_Real']) + [2026]
+    y_linha_completa = list(y_pred_historico_economicidade) + [previsao_2026_economicidade]
+    plt.plot(x_linha_completa, y_linha_completa, 
+             color='purple', 
+             linestyle='--', 
+             marker='s',     
+             markersize=6,
+             linewidth=2,
+             label='Ajuste Múltiplo (Ano + IPCA)')
+    
+    plt.scatter(2026, previsao_2026_economicidade, color='green', marker='X', s=200, label=f'Projeção 2026:\n{(previsao_2026_economicidade * 100):,.2f}%')
+
+    plt.text(2020.2, y_economicidade.max() * 1.4 , f'$R^2 = {r_quadrado_regressao_multipla_economicidade:.4f}$', fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
+    plt.ticklabel_format(style='plain', axis='y')
+    plt.ylim(0, y_economicidade.max() * 1.5)
+    plt.xlim(2019, 2027)
+    plt.title(f'Regressão Linear Múltipla (Fator IPCA): Economicidade de {termos_print}')
+    plt.xlabel('Ano')
+    plt.ylabel('Economicidade Prevista (%)')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.show()
+
 
 '''
     Fase 2 do LicitAnalytics
@@ -241,8 +379,7 @@ colunas_para_excluir = [
     'Cód. Forn.', 'Nome Fornecedor', 'Nome Natureza', 'N° Ficha', 
     'Dotação', 'Alteração Dotação', 'Dotação Atual', 'Reforço', 
     'Empenhado até Hoje', 'Liquidado até Hoje', 'Pago até Hoje', 
-    'Local', 'Funcional', 'Função', 'Nome da Função', 'Subfunção', 
-    'Nome da Subfunção', 'Cód. de aplicação', 'Descrição do Cód. de aplicação', 
+    'Local', 'Funcional', 'Cód. de aplicação', 'Descrição do Cód. de aplicação', 
     'Fonte', 'Fonte de Recurso', 'Cód. Fonte', 'Código Fonte', 
     'Fonte STN', 'Nome Fonte STN'
 ]
@@ -269,4 +406,4 @@ df_empenhos_unificado['Empenho Líquido'] = df_empenhos_unificado['Valor Empenha
 df_empenhos_unificado = df_empenhos_unificado.dropna(subset=['Proc. Licitatório']) # Exclui todos os empenhos que não tem processo licitatório vinculado
 
 # Exportação dos dados
-df_empenhos_unificado.to_csv("Despesas_Gerais_Unificado.csv", sep=';', index=False, encoding='latin1', decimal=',')
+df_empenhos_unificado.to_csv("Despesas Gerais 2020 - 2025.csv", sep=';', index=False, encoding='latin1', decimal=',')
